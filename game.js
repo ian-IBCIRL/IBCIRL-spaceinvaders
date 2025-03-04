@@ -21,6 +21,9 @@ const invaderHeight = 20;
 const invaderPadding = 10;
 const invaderOffsetTop = 30;
 const invaderOffsetLeft = 30;
+let invaderDirection = 1;
+let invaderDescend = false;
+let score = 0;
 
 // Initialize invaders
 for (let r = 0; r < invaderRows; r++) {
@@ -53,6 +56,12 @@ function drawInvader(invader) {
     }
 }
 
+function drawScore() {
+    ctx.fillStyle = 'white';
+    ctx.font = '20px Arial';
+    ctx.fillText(`Score: ${score}`, 10, 20);
+}
+
 function fireLaser() {
     const laser = {
         x: player.x + player.width / 2 - 2.5,
@@ -79,10 +88,28 @@ function updateLasers() {
                     laser.y + laser.height > invader.y) {
                     invader.exploded = true;
                     lasers.splice(i, 1);
+                    score += 10;
                     break;
                 }
             }
         }
+    }
+}
+
+function updateInvaders() {
+    invaders.forEach(invader => {
+        invader.x += invaderSpeed * invaderDirection;
+    });
+
+    const edgeReached = invaders.some(invader => 
+        invader.x + invader.width > canvas.width || invader.x < 0
+    );
+
+    if (edgeReached) {
+        invaderDirection *= -1;
+        invaders.forEach(invader => {
+            invader.y += invaderHeight;
+        });
     }
 }
 
@@ -93,6 +120,7 @@ function clear() {
 function update() {
     clear();
     drawPlayer();
+    drawScore();
     player.x += player.dx;
 
     if (player.x < 0) {
@@ -103,6 +131,7 @@ function update() {
     }
 
     updateLasers();
+    updateInvaders();
     lasers.forEach(drawLaser);
     invaders.forEach(drawInvader);
 
