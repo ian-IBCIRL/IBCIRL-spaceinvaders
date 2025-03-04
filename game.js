@@ -1,12 +1,3 @@
-To add the ability to fire a laser, you can follow these steps:
-
-1. Define a laser object and a list to store active lasers.
-2. Add functions to draw, update, and fire lasers.
-3. Modify the `keyDown` function to fire a laser when the spacebar is pressed.
-
-Here is the updated `game.js` file with these changes:
-
-```javascript
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -104,6 +95,3 @@ document.addEventListener('keydown', keyDown);
 document.addEventListener('keyup', keyUp);
 
 update();
-```
-
-Add this updated `game.js` file to your repository and test the laser firing feature by pressing the spacebar.
