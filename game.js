@@ -11,7 +11,30 @@ const player = {
 };
 
 const lasers = [];
+const invaders = [];
 const laserSpeed = 7;
+const invaderSpeed = 2;
+const invaderRows = 3;
+const invaderCols = 10;
+const invaderWidth = 40;
+const invaderHeight = 20;
+const invaderPadding = 10;
+const invaderOffsetTop = 30;
+const invaderOffsetLeft = 30;
+
+// Initialize invaders
+for (let r = 0; r < invaderRows; r++) {
+    for (let c = 0; c < invaderCols; c++) {
+        const invader = {
+            x: invaderOffsetLeft + c * (invaderWidth + invaderPadding),
+            y: invaderOffsetTop + r * (invaderHeight + invaderPadding),
+            width: invaderWidth,
+            height: invaderHeight,
+            exploded: false
+        };
+        invaders.push(invader);
+    }
+}
 
 function drawPlayer() {
     ctx.fillStyle = 'white';
@@ -21,6 +44,13 @@ function drawPlayer() {
 function drawLaser(laser) {
     ctx.fillStyle = 'red';
     ctx.fillRect(laser.x, laser.y, laser.width, laser.height);
+}
+
+function drawInvader(invader) {
+    if (!invader.exploded) {
+        ctx.fillStyle = 'green';
+        ctx.fillRect(invader.x, invader.y, invader.width, invader.height);
+    }
 }
 
 function fireLaser() {
@@ -40,6 +70,18 @@ function updateLasers() {
         laser.y += laser.dy;
         if (laser.y < 0) {
             lasers.splice(i, 1);
+        } else {
+            for (let j = invaders.length - 1; j >= 0; j--) {
+                const invader = invaders[j];
+                if (!invader.exploded && laser.x < invader.x + invader.width &&
+                    laser.x + laser.width > invader.x &&
+                    laser.y < invader.y + invader.height &&
+                    laser.y + laser.height > invader.y) {
+                    invader.exploded = true;
+                    lasers.splice(i, 1);
+                    break;
+                }
+            }
         }
     }
 }
@@ -62,6 +104,7 @@ function update() {
 
     updateLasers();
     lasers.forEach(drawLaser);
+    invaders.forEach(drawInvader);
 
     requestAnimationFrame(update);
 }
