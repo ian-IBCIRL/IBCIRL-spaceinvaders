@@ -9,7 +9,8 @@ system administration, and more. I asked it to help simple Space Invaders game b
 It said it would help me create a simple Space Invaders game using JavaScript and HTML. 
 It attempted to build a complete, playable version of Space Invaders game for you! 
 
-And we just added a React Mobile version at space-invaders-mobile.html
+And we just added a React Mobile version at space-invaders-mobile.html now at https://ian-ibcirl.github.io/IBCIRL-spaceinvaders/
+See https://ian-ibcirl.github.io/IBCIRL-spaceinvaders/ from your phone...
 
 
 ## Features
