@@ -5,14 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Space Invaders</title>
     <style>
-        body {
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
             background: #000;
             color: #fff;
             font-family: Arial, sans-serif;
             overflow: hidden;
             touch-action: none;
+            height: 100vh;
+            width: 100vw;
         }
         
         .container {
@@ -23,10 +29,12 @@
         }
         
         .header {
-            padding: 10px;
+            padding: 8px;
             text-align: center;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.9);
             border-bottom: 2px solid #fff;
+            font-size: 16px;
+            flex-shrink: 0;
         }
         
         .game-area {
@@ -35,19 +43,30 @@
             justify-content: center;
             align-items: center;
             position: relative;
+            min-height: 0; /* Important for flex child */
         }
         
         canvas {
             border: 2px solid #fff;
             background: #000;
+            max-width: 100%;
+            max-height: 100%;
         }
         
         .controls {
             display: flex;
             justify-content: space-between;
-            padding: 15px;
-            background: rgba(0,0,0,0.8);
+            align-items: center;
+            padding: 10px 15px;
+            background: rgba(0,0,0,0.9);
             border-top: 2px solid #fff;
+            flex-shrink: 0;
+            min-height: 70px;
+        }
+        
+        .movement-controls {
+            display: flex;
+            gap: 12px;
         }
         
         .btn {
@@ -55,23 +74,29 @@
             color: #fff;
             border: 2px solid #fff;
             border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            font-size: 20px;
+            width: 55px;
+            height: 55px;
+            font-size: 18px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
         
         .btn:active {
             background: #555;
+            transform: scale(0.95);
         }
         
         .fire-btn {
             background: #f00;
-            border-radius: 10px;
-            width: 80px;
+            border-radius: 8px;
+            width: 70px;
+            height: 55px;
+            font-size: 14px;
+            font-weight: bold;
         }
         
         .fire-btn:active {
@@ -83,11 +108,19 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.9);
+            background: rgba(0,0,0,0.95);
             border: 3px solid #fff;
             padding: 20px;
             text-align: center;
             display: none;
+            border-radius: 8px;
+            z-index: 100;
+        }
+        
+        .game-over h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #f00;
         }
         
         .restart {
@@ -98,10 +131,64 @@
             font-size: 16px;
             cursor: pointer;
             margin-top: 10px;
+            border-radius: 4px;
+            font-weight: bold;
         }
         
+        /* Desktop - hide mobile controls */
         @media (min-width: 768px) {
-            .controls { display: none; }
+            .controls { 
+                display: none; 
+            }
+            .header::after {
+                content: " • Use ARROW KEYS to move, SPACEBAR to shoot";
+                font-size: 12px;
+                opacity: 0.8;
+            }
+        }
+        
+        /* Small mobile screens */
+        @media (max-height: 600px) {
+            .header {
+                padding: 5px;
+                font-size: 14px;
+            }
+            .controls {
+                padding: 8px 12px;
+                min-height: 60px;
+            }
+            .btn {
+                width: 45px;
+                height: 45px;
+                font-size: 16px;
+            }
+            .fire-btn {
+                width: 60px;
+                height: 45px;
+                font-size: 12px;
+            }
+        }
+        
+        /* Very small screens */
+        @media (max-height: 500px) {
+            .header {
+                padding: 3px;
+                font-size: 12px;
+            }
+            .controls {
+                padding: 5px 10px;
+                min-height: 50px;
+            }
+            .btn {
+                width: 40px;
+                height: 40px;
+                font-size: 14px;
+            }
+            .fire-btn {
+                width: 55px;
+                height: 40px;
+                font-size: 11px;
+            }
         }
     </style>
 </head>
@@ -112,7 +199,7 @@
         </div>
         
         <div class="game-area">
-            <canvas id="canvas" width="800" height="600"></canvas>
+            <canvas id="canvas"></canvas>
             
             <div id="gameOver" class="game-over">
                 <h2>GAME OVER</h2>
@@ -122,7 +209,7 @@
         </div>
         
         <div class="controls">
-            <div style="display: flex; gap: 15px;">
+            <div class="movement-controls">
                 <button id="left" class="btn">←</button>
                 <button id="right" class="btn">→</button>
             </div>
@@ -135,82 +222,79 @@
         let canvas, ctx, score = 0, gameRunning = true;
         let player, bullets = [], invaders = [], enemyBullets = [];
         let keys = {}, touch = { left: false, right: false };
+        let frameCount = 0;
         
-        // Timing variables
-        let lastTime = 0;
-        let invaderMoveTimer = 0;
-        let invaderMoveDelay = 500; // Move invaders every 500ms
-        
-        // Initialize everything
         function init() {
             canvas = document.getElementById('canvas');
             ctx = canvas.getContext('2d');
             
-            // Resize canvas for mobile
             resizeCanvas();
             window.addEventListener('resize', resizeCanvas);
             
-            // Reset game state
             gameRunning = true;
             score = 0;
             bullets = [];
             enemyBullets = [];
-            invaderMoveTimer = 0;
+            frameCount = 0;
             
             // Create player
             player = {
-                x: canvas.width / 2 - 25,
-                y: canvas.height - 50,
-                width: 50,
-                height: 30,
-                speed: 5
+                x: canvas.width / 2 - 20,
+                y: canvas.height - 40,
+                width: 40,
+                height: 25,
+                speed: 6
             };
             
-            // Create invaders
             createInvaders();
-            
-            // Setup controls
             setupControls();
             
-            // Hide game over screen
             document.getElementById('gameOver').style.display = 'none';
             document.getElementById('score').textContent = score;
             
-            // Start game loop
-            lastTime = performance.now();
             gameLoop();
         }
         
         function resizeCanvas() {
             const container = canvas.parentElement;
-            const maxWidth = Math.min(container.clientWidth - 20, 800);
-            const maxHeight = Math.min(container.clientHeight - 20, 600);
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
             
-            canvas.width = maxWidth;
-            canvas.height = maxHeight;
-            canvas.style.width = maxWidth + 'px';
-            canvas.style.height = maxHeight + 'px';
+            // Make canvas fit the available space with some padding
+            const width = Math.min(containerWidth - 10, 600);
+            const height = Math.min(containerHeight - 10, 450);
+            
+            canvas.width = width;
+            canvas.height = height;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            
+            // Adjust player position if canvas resized
+            if (player) {
+                player.x = Math.min(player.x, width - player.width);
+                player.y = height - 40;
+            }
         }
         
         function createInvaders() {
             invaders = [];
-            const rows = 5;
-            const cols = 8;
-            const invaderWidth = 40;
-            const invaderHeight = 30;
-            const spacing = 60;
-            const startX = 50;
-            const startY = 50;
+            // Reduced to 3 rows and 6 columns for mobile
+            const rows = 3;
+            const cols = 6;
+            const invaderWidth = 35;
+            const invaderHeight = 25;
+            const spacingX = Math.min(60, (canvas.width - 100) / cols);
+            const startX = (canvas.width - (cols * spacingX)) / 2;
+            const startY = 30;
             
             for (let row = 0; row < rows; row++) {
                 for (let col = 0; col < cols; col++) {
                     invaders.push({
-                        x: startX + col * spacing,
-                        y: startY + row * 50,
+                        x: startX + col * spacingX,
+                        y: startY + row * 40,
                         width: invaderWidth,
                         height: invaderHeight,
-                        speed: 20, // Distance to move each time
-                        direction: 1 // 1 for right, -1 for left
+                        direction: 1
                     });
                 }
             }
@@ -236,14 +320,59 @@
             const fireBtn = document.getElementById('fire');
             const restartBtn = document.getElementById('restart');
             
-            leftBtn.ontouchstart = leftBtn.onmousedown = () => touch.left = true;
-            leftBtn.ontouchend = leftBtn.onmouseup = () => touch.left = false;
+            // Prevent default behaviors
+            [leftBtn, rightBtn, fireBtn].forEach(btn => {
+                btn.addEventListener('contextmenu', e => e.preventDefault());
+                btn.addEventListener('selectstart', e => e.preventDefault());
+            });
             
-            rightBtn.ontouchstart = rightBtn.onmousedown = () => touch.right = true;
-            rightBtn.ontouchend = rightBtn.onmouseup = () => touch.right = false;
+            // Left button
+            leftBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                touch.left = true;
+            });
+            leftBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                touch.left = false;
+            });
+            leftBtn.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                touch.left = true;
+            });
+            leftBtn.addEventListener('mouseup', (e) => {
+                e.preventDefault();
+                touch.left = false;
+            });
             
-            fireBtn.onclick = shoot;
-            restartBtn.onclick = restart;
+            // Right button
+            rightBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                touch.right = true;
+            });
+            rightBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                touch.right = false;
+            });
+            rightBtn.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                touch.right = true;
+            });
+            rightBtn.addEventListener('mouseup', (e) => {
+                e.preventDefault();
+                touch.right = false;
+            });
+            
+            // Fire button
+            fireBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                shoot();
+            });
+            fireBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                shoot();
+            });
+            
+            restartBtn.addEventListener('click', restart);
         }
         
         function shoot() {
@@ -252,20 +381,21 @@
                     x: player.x + player.width / 2 - 2,
                     y: player.y,
                     width: 4,
-                    height: 10,
-                    speed: 8 // Pixels per frame
+                    height: 8
                 });
             }
         }
         
         function restart() {
-            init(); // Just reinitialize everything
+            init();
         }
         
-        function update(deltaTime) {
+        function update() {
             if (!gameRunning) return;
             
-            // Move player (smooth movement)
+            frameCount++;
+            
+            // Move player
             if ((keys['ArrowLeft'] || touch.left) && player.x > 0) {
                 player.x -= player.speed;
             }
@@ -273,11 +403,10 @@
                 player.x += player.speed;
             }
             
-            // Update bullets (every frame)
+            // Update bullets
             for (let i = bullets.length - 1; i >= 0; i--) {
-                bullets[i].y -= bullets[i].speed;
+                bullets[i].y -= 8;
                 
-                // Remove off-screen bullets
                 if (bullets[i].y < 0) {
                     bullets.splice(i, 1);
                     continue;
@@ -295,9 +424,9 @@
                 }
             }
             
-            // Update enemy bullets (every frame)
+            // Update enemy bullets
             for (let i = enemyBullets.length - 1; i >= 0; i--) {
-                enemyBullets[i].y += 3; // Slower enemy bullets
+                enemyBullets[i].y += 4;
                 
                 if (enemyBullets[i].y > canvas.height) {
                     enemyBullets.splice(i, 1);
@@ -310,59 +439,52 @@
                 }
             }
             
-            // Update invaders (timed movement)
-            invaderMoveTimer += deltaTime;
-            if (invaderMoveTimer >= invaderMoveDelay) {
-                invaderMoveTimer = 0;
+            // Move invaders every 35 frames (slightly slower for mobile)
+            if (frameCount % 35 === 0) {
                 moveInvaders();
             }
             
-            // Random enemy shooting (less frequent)
-            if (Math.random() < 0.002 && invaders.length > 0) {
+            // Enemy shooting every 80 frames (less frequent)
+            if (frameCount % 80 === 0 && invaders.length > 0 && Math.random() < 0.4) {
                 const randomInvader = invaders[Math.floor(Math.random() * invaders.length)];
                 enemyBullets.push({
                     x: randomInvader.x + randomInvader.width / 2,
                     y: randomInvader.y + randomInvader.height,
                     width: 4,
-                    height: 10
+                    height: 8
                 });
             }
             
-            // Create new wave if all invaders destroyed
+            // Create new wave
             if (invaders.length === 0) {
                 createInvaders();
-                invaderMoveDelay = Math.max(200, invaderMoveDelay - 50); // Speed up
             }
         }
         
         function moveInvaders() {
             let shouldMoveDown = false;
             
-            // Check if any invader hits the edge
             for (let invader of invaders) {
-                if ((invader.direction === 1 && invader.x + invader.width >= canvas.width - 10) ||
-                    (invader.direction === -1 && invader.x <= 10)) {
+                if ((invader.direction === 1 && invader.x + invader.width >= canvas.width - 5) ||
+                    (invader.direction === -1 && invader.x <= 5)) {
                     shouldMoveDown = true;
                     break;
                 }
             }
             
             if (shouldMoveDown) {
-                // Move all invaders down and reverse direction
                 for (let invader of invaders) {
-                    invader.y += 30;
+                    invader.y += 20;
                     invader.direction *= -1;
                     
-                    // Check if invader reached player
                     if (invader.y + invader.height >= player.y) {
                         gameOver();
                         return;
                     }
                 }
             } else {
-                // Move all invaders horizontally
                 for (let invader of invaders) {
-                    invader.x += invader.speed * invader.direction;
+                    invader.x += 12 * invader.direction;
                 }
             }
         }
@@ -400,10 +522,10 @@
             for (let invader of invaders) {
                 ctx.fillRect(invader.x, invader.y, invader.width, invader.height);
                 
-                // Simple invader eyes
+                // Simple invader design
                 ctx.fillStyle = '#fff';
-                ctx.fillRect(invader.x + 8, invader.y + 8, 4, 4);
-                ctx.fillRect(invader.x + 28, invader.y + 8, 4, 4);
+                ctx.fillRect(invader.x + 6, invader.y + 6, 3, 3);
+                ctx.fillRect(invader.x + 26, invader.y + 6, 3, 3);
                 ctx.fillStyle = '#f00';
             }
         }
@@ -414,17 +536,12 @@
             document.getElementById('gameOver').style.display = 'block';
         }
         
-        function gameLoop(currentTime) {
-            const deltaTime = currentTime - lastTime;
-            lastTime = currentTime;
-            
-            update(deltaTime);
+        function gameLoop() {
+            update();
             draw();
-            
             requestAnimationFrame(gameLoop);
         }
         
-        // Start the game when page loads
         window.onload = init;
     </script>
 </body>
