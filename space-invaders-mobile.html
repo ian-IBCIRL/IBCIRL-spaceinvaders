@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Space Invaders Mobile</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .game-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .game-header {
+            padding: 10px 20px;
+            background-color: rgba(0, 0, 0, 0.8);
+            border-bottom: 2px solid #fff;
+            text-align: center;
+        }
+        
+        .score {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .canvas-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        
+        canvas {
+            border: 2px solid #fff;
+            background-color: #000;
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.9);
+            border: 3px solid #fff;
+            padding: 30px;
+            text-align: center;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .game-over h2 {
+            font-size: 28px;
+            margin-bottom: 15px;
+            color: #ff0000;
+        }
+        
+        .restart-btn {
+            background-color: #00ff00;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            margin-top: 15px;
+        }
+        
+        .mobile-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background-color: rgba(0, 0, 0, 0.8);
+            border-top: 2px solid #fff;
+            min-height: 80px;
+        }
+        
+        .movement-controls {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .control-btn {
+            background-color: #333;
+            color: #fff;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .control-btn:active {
+            background-color: #555;
+            transform: scale(0.95);
+        }
+        
+        .shoot-btn {
+            background-color: #ff0000;
+            width: 80px;
+            height: 60px;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+        
+        .shoot-btn:active {
+            background-color: #cc0000;
+        }
+        
+        @media (min-width: 768px) {
+            .mobile-controls {
+                display: none;
+            }
+            
+            .game-header::after {
+                content: "Use ARROW KEYS to move, SPACEBAR to shoot";
+                display: block;
+                font-size: 14px;
+                margin-top: 5px;
+                opacity: 0.8;
+            }
+        }
+        
+        @media (max-height: 500px) and (orientation: landscape) {
+            .game-header {
+                padding: 5px 20px;
+            }
+            
+            .mobile-controls {
+                padding: 10px 20px;
+                min-height: 60px;
+            }
+            
+            .control-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+            
+            .shoot-btn {
+                width: 70px;
+                height: 50px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <div class="score">Score: <span id="score">0</span></div>
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="gameCanvas"></canvas>
+            
+            <div id="gameOver" class="game-over">
+                <h2>GAME OVER</h2>
+                <p>Final Score: <span id="finalScore">0</span></p>
+                <button id="restartBtn" class="restart-btn">RESTART</button>
+            </div>
+        </div>
+        
+        <div class="mobile-controls">
+            <div class="movement-controls">
+                <button id="leftBtn" class="control-btn">←</button>
+                <button id="rightBtn" class="control-btn">→</button>
+            </div>
+            <button id="shootBtn" class="control-btn shoot-btn">FIRE</button>
+        </div>
+    </div>
+
+    <script>
+        class SpaceInvadersGame {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.scoreElement = document.getElementById('score');
+                this.gameOverElement = document.getElementById('gameOver');
+                this.finalScoreElement = document.getElementById('finalScore');
+                
+                this.gameRunning = true;
+                this.score = 0;
+                this.keys = {};
+                this.touchControls = { left: false, right: false };
+                
+                this.bullets = [];
+                this.invaders = [];
+                this.invaderBullets = [];
+                
+                this.setupCanvas();
+                this.setupControls();
+                this.initializeGame();
+                this.gameLoop();
+            }
+            
+            setupCanvas() {
+                const container = this.canvas.parentElement;
+                const updateSize = () => {
+                    const containerWidth = container.clientWidth;
+                    const containerHeight = container.clientHeight;
+                    
+                    const aspectRatio = 4 / 3;
+                    let width = containerWidth - 20;
+                    let height = containerHeight - 20;
+                    
+                    if (width / height > aspectRatio) {
+                        width = height * aspectRatio;
+                    } else {
+                        height = width / aspectRatio;
+                    }
+                    
+                    this.canvas.width = width;
+                    this.canvas.height = height;
+                    this.canvas.style.width = width + 'px';
+                    this.canvas.style.height = height + 'px';
+                    
+                    if (this.player) {
+                        this.player.x = Math.min(this.player.x, width - this.player.width);
+                        this.player.y = height - 60;
+                    }
+                };
+                
+                updateSize();
+                window.addEventListener('resize', updateSize);
+            }
+            
+            setupControls() {
+                // Keyboard controls
+                document.addEventListener('keydown', (e) => {
+                    this.keys[e.code] = true;
+                    if (e.code === 'Space' && this.gameRunning) {
+                        e.preventDefault();
+                        this.shoot();
+                    }
+                    if (e.code === 'KeyR' && !this.gameRunning) {
+                        this.restart();
+                    }
+                });
+                
+                document.addEventListener('keyup', (e) => {
+                    this.keys[e.code] = false;
+                });
+                
+                // Touch controls
+                const leftBtn = document.getElementById('leftBtn');
+                const rightBtn = document.getElementById('rightBtn');
+                const shootBtn = document.getElementById('shootBtn');
+                const restartBtn = document.getElementById('restartBtn');
+                
+                leftBtn.addEventListener('touchstart', () => this.touchControls.left = true);
+                leftBtn.addEventListener('touchend', () => this.touchControls.left = false);
+                leftBtn.addEventListener('mousedown', () => this.touchControls.left = true);
+                leftBtn.addEventListener('mouseup', () => this.touchControls.left = false);
+                
+                rightBtn.addEventListener('touchstart', () => this.touchControls.right = true);
+                rightBtn.addEventListener('touchend', () => this.touchControls.right = false);
+                rightBtn.addEventListener('mousedown', () => this.touchControls.right = true);
+                rightBtn.addEventListener('mouseup', () => this.touchControls.right = false);
+                
+                shootBtn.addEventListener('click', () => this.shoot());
+                restartBtn.addEventListener('click', () => this.restart());
+            }
+            
+            initializeGame() {
+                this.gameRunning = true;
+                this.score = 0;
+                this.bullets = [];
+                this.invaderBullets = [];
+                this.invaders = [];
+                
+                this.player = {
+                    x: this.canvas.width / 2 - 25,
+                    y: this.canvas.height - 60,
+                    width: 50,
+                    height: 30,
+                    speed: 5,
+                    color: '#00ff00'
+                };
+                
+                this.createInvaders();
+                this.updateScore();
+                this.gameOverElement.style.display = 'none';
+            }
+            
+            createInvaders() {
+                for (let row = 0; row < 5; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        this.invaders.push(new Invader(
+                            col * 60 + 50,
+                            row * 50 + 50
+                        ));
+                    }
+                }
+            }
+            
+            shoot() {
+                if (this.gameRunning && this.player) {
+                    this.bullets.push(new Bullet(
+                        this.player.x + this.player.width / 2 - 2,
+                        this.player.y,
+                        -7
+                    ));
+                }
+            }
+            
+            restart() {
+                this.initializeGame();
+            }
+            
+            updateScore() {
+                this.scoreElement.textContent = this.score;
+            }
+            
+            checkCollision(rect1, rect2) {
+                return rect1.x < rect2.x + rect2.width &&
+                       rect1.x + rect1.width > rect2.x &&
+                       rect1.y < rect2.y + rect2.height &&
+                       rect1.y + rect1.height > rect2.y;
+            }
+            
+            gameLoop() {
+                if (this.gameRunning) {
+                    this.update();
+                }
+                this.draw();
+                requestAnimationFrame(() => this.gameLoop());
+            }
+            
+            update() {
+                // Update player
+                if ((this.keys['ArrowLeft'] || this.touchControls.left) && this.player.x > 0) {
+                    this.player.x -= this.player.speed;
+                }
+                if ((this.keys['ArrowRight'] || this.touchControls.right) && this.player.x < this.canvas.width - this.player.width) {
+                    this.player.x += this.player.speed;
+                }
+                
+                // Update bullets
+                for (let i = this.bullets.length - 1; i >= 0; i--) {
+                    this.bullets[i].update();
+                    
+                    if (this.bullets[i].isOffScreen(this.canvas.height)) {
+                        this.bullets.splice(i, 1);
+                        continue;
+                    }
+                    
+                    for (let j = this.invaders.length - 1; j >= 0; j--) {
+                        if (this.checkCollision(this.bullets[i], this.invaders[j])) {
+                            this.bullets.splice(i, 1);
+                            this.invaders.splice(j, 1);
+                            this.score += 10;
+                            this.updateScore();
+                            break;
+                        }
+                    }
+                }
+                
+                // Update invader bullets
+                for (let i = this.invaderBullets.length - 1; i >= 0; i--) {
+                    this.invaderBullets[i].update();
+                    
+                    if (this.invaderBullets[i].isOffScreen(this.canvas.height)) {
+                        this.invaderBullets.splice(i, 1);
+                        continue;
+                    }
+                    
+                    if (this.checkCollision(this.invaderBullets[i], this.player)) {
+                        this.gameOver();
+                        return;
+                    }
+                }
+                
+                // Update invaders
+                let shouldMoveDown = false;
+                for (let invader of this.invaders) {
+                    if (invader.x <= 0 || invader.x >= this.canvas.width - invader.width) {
+                        shouldMoveDown = true;
+                        break;
+                    }
+                }
+                
+                if (shouldMoveDown) {
+                    for (let invader of this.invaders) {
+                        invader.y += 20;
+                        invader.direction *= -1;
+                    }
+                }
+                
+                for (let invader of this.invaders) {
+                    invader.update(this.invaderBullets);
+                    
+                    if (invader.y + invader.height >= this.player.y) {
+                        this.gameOver();
+                        return;
+                    }
+                }
+                
+                // Check win condition
+                if (this.invaders.length === 0) {
+                    this.createInvaders();
+                    for (let invader of this.invaders) {
+                        invader.speed += 0.2;
+                    }
+                }
+            }
+            
+            draw() {
+                this.ctx.fillStyle = '#000';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw player
+                this.ctx.fillStyle = this.player.color;
+                this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height);
+                this.ctx.fillStyle = '#fff';
+                this.ctx.fillRect(this.player.x + 20, this.player.y + 5, 10, 5);
+                
+                // Draw bullets
+                this.bullets.forEach(bullet => bullet.draw(this.ctx));
+                this.invaderBullets.forEach(bullet => bullet.draw(this.ctx));
+                
+                // Draw invaders
+                this.invaders.forEach(invader => invader.draw(this.ctx));
+            }
+            
+            gameOver() {
+                this.gameRunning = false;
+                this.finalScoreElement.textContent = this.score;
+                this.gameOverElement.style.display = 'block';
+            }
+        }
+        
+        class Bullet {
+            constructor(x, y, speed, color = '#ffff00') {
+                this.x = x;
+                this.y = y;
+                this.width = 4;
+                this.height = 10;
+                this.speed = speed;
+                this.color = color;
+            }
+            
+            update() {
+                this.y += this.speed;
+            }
+            
+            draw(ctx) {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+            
+            isOffScreen(canvasHeight) {
+                return this.y < 0 || this.y > canvasHeight;
+            }
+        }
+        
+        class Invader {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = 40;
+                this.height = 30;
+                this.speed = 1;
+                this.color = '#ff0000';
+                this.direction = 1;
+                this.shootTimer = Math.random() * 200 + 100;
+            }
+            
+            update(invaderBullets) {
+                this.x += this.speed * this.direction;
+                
+                this.shootTimer--;
+                if (this.shootTimer <= 0 && Math.random() < 0.001) {
+                    invaderBullets.push(new Bullet(
+                        this.x + this.width / 2,
+                        this.y + this.height,
+                        3,
+                        '#ff0000'
+                    ));
+                    this.shootTimer = Math.random() * 200 + 100;
+                }
+            }
+            
+            draw(ctx) {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(this.x + 10, this.y + 5, 5, 5);
+                ctx.fillRect(this.x + 25, this.y + 5, 5, 5);
+                ctx.fillRect(this.x + 15, this.y + 15, 10, 5);
+            }
+        }
+        
+        // Start the game
+        new SpaceInvadersGame();
+    </script>
+</body>
+</html>
