@@ -67,26 +67,26 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 15px;
+            padding: 15px 20px;
             background: rgba(0,0,0,0.95);
             border-top: 2px solid #fff;
             flex-shrink: 0;
-            min-height: 70px;
+            min-height: 80px;
             position: relative;
             z-index: 10;
-            padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+            padding-bottom: calc(15px + env(safe-area-inset-bottom, 0px));
         }
         
         .controls-info {
             font-size: 12px;
             opacity: 0.7;
             text-align: center;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
         }
         
         .movement-controls {
             display: flex;
-            gap: 12px;
+            gap: 20px;
         }
         
         .btn {
@@ -94,9 +94,9 @@
             color: #fff;
             border: 2px solid #fff;
             border-radius: 50%;
-            width: 55px;
-            height: 55px;
-            font-size: 18px;
+            width: 65px;
+            height: 65px;
+            font-size: 22px;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -105,6 +105,7 @@
             -webkit-user-select: none;
             -webkit-tap-highlight-color: transparent;
             transition: all 0.1s ease;
+            font-weight: bold;
         }
         
         .btn:active, .btn.pressed {
@@ -118,10 +119,10 @@
         
         .fire-btn {
             background: #f00;
-            border-radius: 8px;
-            width: 70px;
-            height: 55px;
-            font-size: 14px;
+            border-radius: 12px;
+            width: 90px;
+            height: 65px;
+            font-size: 16px;
             font-weight: bold;
         }
         
@@ -169,16 +170,95 @@
             background: #0c0;
         }
         
-        @media (min-width: 768px) {
+        /* Tablet specific - larger buttons */
+        @media (min-width: 768px) and (max-width: 1024px) {
+            .controls {
+                padding: 20px 30px;
+                min-height: 100px;
+            }
+            
+            .btn {
+                width: 80px;
+                height: 80px;
+                font-size: 28px;
+            }
+            
+            .fire-btn {
+                width: 110px;
+                height: 80px;
+                font-size: 18px;
+            }
+            
+            .movement-controls {
+                gap: 25px;
+            }
+            
             .controls-info {
-                display: block;
+                font-size: 14px;
+                margin-bottom: 10px;
             }
         }
         
-        @media (max-height: 600px) {
+        /* Desktop - even larger for mouse use */
+        @media (min-width: 1025px) {
+            .controls {
+                padding: 25px 40px;
+                min-height: 110px;
+            }
+            
+            .btn {
+                width: 85px;
+                height: 85px;
+                font-size: 30px;
+            }
+            
+            .fire-btn {
+                width: 120px;
+                height: 85px;
+                font-size: 20px;
+            }
+            
+            .movement-controls {
+                gap: 30px;
+            }
+            
+            .controls-info {
+                font-size: 16px;
+                margin-bottom: 12px;
+            }
+        }
+        
+        /* Small mobile screens - keep current size */
+        @media (max-width: 767px) and (max-height: 600px) {
             .header {
                 padding: 5px;
                 font-size: 14px;
+            }
+            .controls {
+                padding: 10px 15px;
+                min-height: 70px;
+                padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+            }
+            .btn {
+                width: 55px;
+                height: 55px;
+                font-size: 18px;
+            }
+            .fire-btn {
+                width: 75px;
+                height: 55px;
+                font-size: 14px;
+            }
+            .movement-controls {
+                gap: 15px;
+            }
+        }
+        
+        /* Very small screens */
+        @media (max-width: 767px) and (max-height: 500px) {
+            .header {
+                padding: 3px;
+                font-size: 12px;
             }
             .controls {
                 padding: 8px 12px;
@@ -186,51 +266,35 @@
                 padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
             }
             .btn {
-                width: 45px;
-                height: 45px;
+                width: 50px;
+                height: 50px;
                 font-size: 16px;
             }
             .fire-btn {
-                width: 60px;
-                height: 45px;
+                width: 65px;
+                height: 50px;
                 font-size: 12px;
+            }
+            .movement-controls {
+                gap: 12px;
             }
         }
         
-        @media (max-height: 500px) {
-            .header {
-                padding: 3px;
-                font-size: 12px;
-            }
-            .controls {
-                padding: 5px 10px;
-                min-height: 50px;
-                padding-bottom: calc(5px + env(safe-area-inset-bottom, 0px));
-            }
-            .btn {
-                width: 40px;
-                height: 40px;
-                font-size: 14px;
-            }
-            .fire-btn {
-                width: 55px;
-                height: 40px;
-                font-size: 11px;
-            }
-        }
-        
+        /* Landscape orientation adjustments */
         @media (orientation: landscape) and (max-height: 500px) {
             .controls {
-                padding: 5px 15px;
-                min-height: 45px;
+                padding: 8px 20px;
+                min-height: 55px;
             }
             .btn {
-                width: 40px;
-                height: 40px;
+                width: 50px;
+                height: 50px;
+                font-size: 18px;
             }
             .fire-btn {
-                width: 55px;
-                height: 40px;
+                width: 70px;
+                height: 50px;
+                font-size: 14px;
             }
         }
     </style>
@@ -329,8 +393,8 @@
             const containerWidth = container.clientWidth;
             const containerHeight = container.clientHeight;
             
-            const width = Math.min(containerWidth - 10, 600);
-            const height = Math.min(containerHeight - 10, 450);
+            const width = Math.min(containerWidth - 10, 700);
+            const height = Math.min(containerHeight - 10, 500);
             
             canvas.width = width;
             canvas.height = height;
@@ -345,11 +409,13 @@
         
         function createInvaders() {
             invaders = [];
-            const rows = 3;
-            const cols = 6;
+            // Back to 5 rows and 8 columns for classic experience
+            const rows = 5;
+            const cols = 8;
             const invaderWidth = 35;
             const invaderHeight = 25;
-            const spacingX = Math.min(60, (canvas.width - 100) / cols);
+            const spacingX = Math.min(55, (canvas.width - 100) / cols);
+            const spacingY = 35;
             const startX = (canvas.width - (cols * spacingX)) / 2;
             const startY = 30;
             
@@ -357,7 +423,7 @@
                 for (let col = 0; col < cols; col++) {
                     invaders.push({
                         x: startX + col * spacingX,
-                        y: startY + row * 40,
+                        y: startY + row * spacingY,
                         width: invaderWidth,
                         height: invaderHeight,
                         direction: 1
