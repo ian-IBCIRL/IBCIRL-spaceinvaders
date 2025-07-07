@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Space Invaders - Strategic</title>
+    <title>Space Invaders</title>
     <style>
         * {
             margin: 0;
@@ -46,19 +46,6 @@
             z-index: 10;
         }
         
-        .score-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 400px;
-            margin: 0 auto;
-        }
-        
-        .score-detail {
-            font-size: 12px;
-            opacity: 0.8;
-        }
-        
         .game-area {
             flex: 1;
             display: flex;
@@ -91,7 +78,7 @@
         }
         
         .controls-info {
-            font-size: 11px;
+            font-size: 12px;
             opacity: 0.7;
             text-align: center;
             margin-bottom: 8px;
@@ -135,9 +122,8 @@
             border-radius: 12px;
             width: 90px;
             height: 65px;
-            font-size: 14px;
+            font-size: 16px;
             font-weight: bold;
-            position: relative;
         }
         
         .fire-btn:active, .fire-btn.pressed {
@@ -146,22 +132,6 @@
         
         .fire-btn:hover {
             background: #e00;
-        }
-        
-        .fire-cost {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: #ff0;
-            color: #000;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            font-size: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
         }
         
         .game-over {
@@ -184,12 +154,6 @@
             color: #f00;
         }
         
-        .game-stats {
-            font-size: 14px;
-            margin: 10px 0;
-            opacity: 0.9;
-        }
-        
         .restart {
             background: #0f0;
             color: #000;
@@ -206,7 +170,7 @@
             background: #0c0;
         }
         
-        /* Tablet specific - 1.5x larger buttons */
+        /* Tablet specific - 1.5x larger buttons (120px from 80px) */
         @media (min-width: 768px) and (max-width: 1024px) {
             .controls {
                 padding: 25px 35px;
@@ -225,20 +189,12 @@
                 font-size: 22px;
             }
             
-            .fire-cost {
-                width: 30px;
-                height: 30px;
-                font-size: 14px;
-                top: -10px;
-                right: -10px;
-            }
-            
             .movement-controls {
                 gap: 35px;
             }
             
             .controls-info {
-                font-size: 14px;
+                font-size: 16px;
                 margin-bottom: 12px;
             }
         }
@@ -262,23 +218,17 @@
                 font-size: 20px;
             }
             
-            .fire-cost {
-                width: 25px;
-                height: 25px;
-                font-size: 12px;
-            }
-            
             .movement-controls {
                 gap: 30px;
             }
             
             .controls-info {
-                font-size: 14px;
+                font-size: 16px;
                 margin-bottom: 12px;
             }
         }
         
-        /* Small mobile screens */
+        /* Small mobile screens - keep current size */
         @media (max-width: 767px) and (max-height: 600px) {
             .header {
                 padding: 5px;
@@ -297,12 +247,7 @@
             .fire-btn {
                 width: 75px;
                 height: 55px;
-                font-size: 12px;
-            }
-            .fire-cost {
-                width: 16px;
-                height: 16px;
-                font-size: 8px;
+                font-size: 14px;
             }
             .movement-controls {
                 gap: 15px;
@@ -328,12 +273,7 @@
             .fire-btn {
                 width: 65px;
                 height: 50px;
-                font-size: 11px;
-            }
-            .fire-cost {
-                width: 14px;
-                height: 14px;
-                font-size: 7px;
+                font-size: 12px;
             }
             .movement-controls {
                 gap: 12px;
@@ -354,12 +294,7 @@
             .fire-btn {
                 width: 70px;
                 height: 50px;
-                font-size: 12px;
-            }
-            .fire-cost {
-                width: 16px;
-                height: 16px;
-                font-size: 8px;
+                font-size: 14px;
             }
         }
     </style>
@@ -367,11 +302,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="score-info">
-                <div class="score-detail">Shots: <span id="shotsFired">0</span></div>
-                <div>Score: <span id="score">0</span></div>
-                <div class="score-detail">Accuracy: <span id="accuracy">0%</span></div>
-            </div>
+            <div>Score: <span id="score">0</span></div>
         </div>
         
         <div class="game-area">
@@ -379,28 +310,20 @@
             
             <div id="gameOver" class="game-over">
                 <h2>GAME OVER</h2>
-                <p>Final Score: <span id="finalScore">0</span></p>
-                <div class="game-stats">
-                    <div>Shots Fired: <span id="finalShots">0</span></div>
-                    <div>Hits: <span id="finalHits">0</span></div>
-                    <div>Accuracy: <span id="finalAccuracy">0%</span></div>
-                </div>
+                <p>Score: <span id="finalScore">0</span></p>
                 <button id="restart" class="restart">RESTART</button>
             </div>
         </div>
         
         <div class="controls">
             <div style="display: flex; flex-direction: column; align-items: center;">
-                <div class="controls-info">Strategic Mode: Each shot costs 5 points!</div>
+                <div class="controls-info">Touch or Keyboard: ← → SPACE</div>
                 <div class="movement-controls">
                     <button id="left" class="btn">←</button>
                     <button id="right" class="btn">→</button>
                 </div>
             </div>
-            <button id="fire" class="btn fire-btn">
-                FIRE
-                <div class="fire-cost">-5</div>
-            </button>
+            <button id="fire" class="btn fire-btn">FIRE</button>
         </div>
     </div>
 
@@ -410,20 +333,14 @@
         let player, bullets = [], invaders = [], enemyBullets = [];
         let keys = {}, touch = { left: false, right: false };
         
-        // Strategic scoring variables
-        let shotsFired = 0;
-        let hits = 0;
-        
-        // Cross-browser timing variables
+        // Cross-browser timing variables - THESE NEED TO BE RESET!
         let invaderMoveCounter = 0;
         let enemyShootCounter = 0;
-        let gameLoopId = null;
+        let gameLoopId = null; // Track animation frame ID
         
         // Timing constants
         const INVADER_MOVE_INTERVAL = 40;
         const ENEMY_SHOOT_INTERVAL = 90;
-        const SHOT_COST = 5; // Points deducted per shot
-        const HIT_REWARD = 10; // Points gained per hit
         
         // Touch state management
         let leftBtn, rightBtn, fireBtn;
@@ -444,12 +361,10 @@
             // COMPLETE RESET OF ALL GAME STATE
             gameRunning = true;
             score = 0;
-            shotsFired = 0;
-            hits = 0;
             bullets = [];
             enemyBullets = [];
             
-            // Reset all timing counters
+            // CRITICAL: Reset all timing counters to prevent speed issues
             invaderMoveCounter = 0;
             enemyShootCounter = 0;
             
@@ -462,31 +377,25 @@
                 y: canvas.height - 40,
                 width: 40,
                 height: 25,
-                speed: 6
+                speed: 6 // Reset to original speed
             };
             
             createInvaders();
             setupControls();
             
             document.getElementById('gameOver').style.display = 'none';
-            updateScoreDisplay();
+            document.getElementById('score').textContent = score;
             
             // Start fresh game loop
             gameLoop();
         }
         
-        function updateScoreDisplay() {
-            document.getElementById('score').textContent = score;
-            document.getElementById('shotsFired').textContent = shotsFired;
-            
-            const accuracy = shotsFired > 0 ? Math.round((hits / shotsFired) * 100) : 0;
-            document.getElementById('accuracy').textContent = accuracy + '%';
-        }
-        
         function resetTouchState() {
+            // Force reset all touch states
             touch.left = false;
             touch.right = false;
             
+            // Remove visual pressed states
             if (leftBtn) leftBtn.classList.remove('pressed');
             if (rightBtn) rightBtn.classList.remove('pressed');
             if (fireBtn) fireBtn.classList.remove('pressed');
@@ -513,6 +422,7 @@
         
         function createInvaders() {
             invaders = [];
+            // 5 rows and 8 columns for classic experience
             const rows = 5;
             const cols = 8;
             const invaderWidth = 35;
@@ -529,13 +439,14 @@
                         y: startY + row * spacingY,
                         width: invaderWidth,
                         height: invaderHeight,
-                        direction: 1
+                        direction: 1 // Reset to original direction
                     });
                 }
             }
         }
         
         function setupControls() {
+            // Get button references
             leftBtn = document.getElementById('left');
             rightBtn = document.getElementById('right');
             fireBtn = document.getElementById('fire');
@@ -568,7 +479,7 @@
                 btn.addEventListener('dragstart', e => e.preventDefault());
             });
             
-            // Left button
+            // Left button with comprehensive event handling
             leftBtn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -606,7 +517,7 @@
                 leftBtn.classList.remove('pressed');
             });
             
-            // Right button
+            // Right button with comprehensive event handling
             rightBtn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -663,34 +574,29 @@
         
         function shoot() {
             if (gameRunning) {
-                // Deduct points for shooting
-                shotsFired++;
-                score = Math.max(0, score - SHOT_COST); // Don't let score go negative
-                
                 bullets.push({
                     x: player.x + player.width / 2 - 2,
                     y: player.y,
                     width: 4,
                     height: 8
                 });
-                
-                updateScoreDisplay();
             }
         }
         
         function restart() {
-            console.log('Restarting strategic game');
+            console.log('Restarting game - resetting all timing variables');
             resetTouchState();
-            init();
+            init(); // This will reset everything including timing counters
         }
         
         function update() {
             if (!gameRunning) return;
             
+            // Increment timing counters
             invaderMoveCounter++;
             enemyShootCounter++;
             
-            // Move player
+            // Move player - check bounds more strictly
             if ((keys['ArrowLeft'] || touch.left) && player.x > 0) {
                 player.x = Math.max(0, player.x - player.speed);
             }
@@ -698,33 +604,29 @@
                 player.x = Math.min(canvas.width - player.width, player.x + player.speed);
             }
             
-            // Update bullets
+            // Update bullets at consistent speed
             for (let i = bullets.length - 1; i >= 0; i--) {
-                bullets[i].y -= 8;
+                bullets[i].y -= 8; // Fixed bullet speed
                 
                 if (bullets[i].y < 0) {
                     bullets.splice(i, 1);
                     continue;
                 }
                 
-                // Check collision with invaders
                 for (let j = invaders.length - 1; j >= 0; j--) {
                     if (collision(bullets[i], invaders[j])) {
                         bullets.splice(i, 1);
                         invaders.splice(j, 1);
-                        
-                        // Strategic scoring: Hit gives points, but shot already cost points
-                        hits++;
-                        score += HIT_REWARD;
-                        updateScoreDisplay();
+                        score += 10;
+                        document.getElementById('score').textContent = score;
                         break;
                     }
                 }
             }
             
-            // Update enemy bullets
+            // Update enemy bullets at consistent speed
             for (let i = enemyBullets.length - 1; i >= 0; i--) {
-                enemyBullets[i].y += 4;
+                enemyBullets[i].y += 4; // Fixed enemy bullet speed
                 
                 if (enemyBullets[i].y > canvas.height) {
                     enemyBullets.splice(i, 1);
@@ -739,13 +641,13 @@
             
             // Move invaders at consistent intervals
             if (invaderMoveCounter >= INVADER_MOVE_INTERVAL) {
-                invaderMoveCounter = 0;
+                invaderMoveCounter = 0; // Reset counter
                 moveInvaders();
             }
             
             // Enemy shooting at consistent intervals
             if (enemyShootCounter >= ENEMY_SHOOT_INTERVAL && invaders.length > 0 && Math.random() < 0.4) {
-                enemyShootCounter = 0;
+                enemyShootCounter = 0; // Reset counter
                 const randomInvader = invaders[Math.floor(Math.random() * invaders.length)];
                 enemyBullets.push({
                     x: randomInvader.x + randomInvader.width / 2,
@@ -774,7 +676,7 @@
             
             if (shouldMoveDown) {
                 for (let invader of invaders) {
-                    invader.y += 20;
+                    invader.y += 20; // Fixed movement distance
                     invader.direction *= -1;
                     
                     if (invader.y + invader.height >= player.y) {
@@ -784,7 +686,7 @@
                 }
             } else {
                 for (let invader of invaders) {
-                    invader.x += 12 * invader.direction;
+                    invader.x += 12 * invader.direction; // Fixed movement speed
                 }
             }
         }
@@ -827,13 +729,7 @@
         function gameOver() {
             gameRunning = false;
             resetTouchState();
-            
-            const accuracy = shotsFired > 0 ? Math.round((hits / shotsFired) * 100) : 0;
-            
             document.getElementById('finalScore').textContent = score;
-            document.getElementById('finalShots').textContent = shotsFired;
-            document.getElementById('finalHits').textContent = hits;
-            document.getElementById('finalAccuracy').textContent = accuracy + '%';
             document.getElementById('gameOver').style.display = 'block';
         }
         
