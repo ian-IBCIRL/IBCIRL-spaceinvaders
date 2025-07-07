@@ -48,7 +48,7 @@ To play the game, simply open the space-invaders.html file in your web browser:
 - **March 4, 2025**: Added target space invaders that explode when hit by a laser. [Commit](https://github.com/ian-IBCIRL/IBCIRL-spaceinvaders/commit/574f6e0f885333f327b7a4b35ac32dd452180ca4)
 - **March 4, 2025**: Implemented laser firing mechanics. Corrected and updated `game.js` file. [Commit](https://github.com/ian-IBCIRL/IBCIRL-spaceinvaders/commit/3ad1598aeac0e0249bc843b26400f7a661d4bcbc)
 - **March 4, 2025**: Initial commit with basic game setup. [Commit](https://github.com/ian-IBCIRL/IBCIRL-spaceinvaders/commit/5d5288cf1e6622784c44725741de0efae5438cd1)
-- **July 7, 2025**: Updated with a  file created by Claude-4-sonnet aka Amazon Q, your AI assistant built by AWS, promises to help me.
+- **July 7, 2025**: Updated with multiple files created by Claude-4-sonnet aka Amazon Q, your AI assistant built by AWS, which helped me iterate through bugs and various mobile options, including a tablet and chrome, safari and edge compatability.
 
 ## Collaboration
 This project is developed in collaboration with GitHub Copilot and Amazon Q.
@@ -67,3 +67,37 @@ This project is developed in collaboration with GitHub Copilot and Amazon Q.
 
 ## License
 This project is licensed under the MIT License.
+
+## How does Q CLI work?
+Amazon Q is running on AWS's remote systems, not locally on your PC. Here's how it works:
+
+## 🌐 How Amazon Q Works:
+
+Your side (local):
+• The q chat CLI tool on your system
+• Sends your messages to AWS servers
+• Receives and displays my responses
+
+AWS side (remote):
+• My AI model runs on AWS infrastructure
+• All the processing, reasoning, and response generation happens on AWS servers
+• I have access to tools that can interact with your local system (like file operations, bash commands)
+
+## 🔒 What This Means:
+
+Data flow:
+• Your prompts → AWS servers
+• My responses ← AWS servers
+• Tool executions (file creation, etc.) happen locally via the CLI
+
+Privacy:
+• Your conversations go through AWS systems
+• AWS has security measures and privacy policies in place
+• The CLI tool handles the secure communication
+
+So while I can help you with local tasks (creating files, running commands), the "thinking" part of our conversation
+happens on AWS's cloud infrastructure, not on your PC. The CLI tool is essentially a bridge between your local
+environment and my remote AI capabilities.
+
+This setup gives you the power of cloud-based AI while still being able to work with your local files and system!
+
