@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Space Invaders</title>
     <style>
         * {
@@ -19,13 +21,18 @@
             touch-action: none;
             height: 100vh;
             width: 100vw;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
         }
         
         .container {
             width: 100vw;
             height: 100vh;
+            height: 100dvh;
             display: flex;
             flex-direction: column;
+            position: relative;
         }
         
         .header {
@@ -35,6 +42,8 @@
             border-bottom: 2px solid #fff;
             font-size: 16px;
             flex-shrink: 0;
+            position: relative;
+            z-index: 10;
         }
         
         .game-area {
@@ -43,7 +52,8 @@
             justify-content: center;
             align-items: center;
             position: relative;
-            min-height: 0; /* Important for flex child */
+            min-height: 0;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
         }
         
         canvas {
@@ -58,10 +68,20 @@
             justify-content: space-between;
             align-items: center;
             padding: 10px 15px;
-            background: rgba(0,0,0,0.9);
+            background: rgba(0,0,0,0.95);
             border-top: 2px solid #fff;
             flex-shrink: 0;
             min-height: 70px;
+            position: relative;
+            z-index: 10;
+            padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+        }
+        
+        .controls-info {
+            font-size: 12px;
+            opacity: 0.7;
+            text-align: center;
+            margin-bottom: 5px;
         }
         
         .movement-controls {
@@ -82,12 +102,18 @@
             align-items: center;
             justify-content: center;
             user-select: none;
+            -webkit-user-select: none;
             -webkit-tap-highlight-color: transparent;
+            transition: all 0.1s ease;
         }
         
-        .btn:active {
+        .btn:active, .btn.pressed {
             background: #555;
             transform: scale(0.95);
+        }
+        
+        .btn:hover {
+            background: #444;
         }
         
         .fire-btn {
@@ -99,8 +125,12 @@
             font-weight: bold;
         }
         
-        .fire-btn:active {
+        .fire-btn:active, .fire-btn.pressed {
             background: #c00;
+        }
+        
+        .fire-btn:hover {
+            background: #e00;
         }
         
         .game-over {
@@ -135,19 +165,16 @@
             font-weight: bold;
         }
         
-        /* Desktop - hide mobile controls */
+        .restart:hover {
+            background: #0c0;
+        }
+        
         @media (min-width: 768px) {
-            .controls { 
-                display: none; 
-            }
-            .header::after {
-                content: " • Use ARROW KEYS to move, SPACEBAR to shoot";
-                font-size: 12px;
-                opacity: 0.8;
+            .controls-info {
+                display: block;
             }
         }
         
-        /* Small mobile screens */
         @media (max-height: 600px) {
             .header {
                 padding: 5px;
@@ -156,6 +183,7 @@
             .controls {
                 padding: 8px 12px;
                 min-height: 60px;
+                padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
             }
             .btn {
                 width: 45px;
@@ -169,7 +197,6 @@
             }
         }
         
-        /* Very small screens */
         @media (max-height: 500px) {
             .header {
                 padding: 3px;
@@ -178,6 +205,7 @@
             .controls {
                 padding: 5px 10px;
                 min-height: 50px;
+                padding-bottom: calc(5px + env(safe-area-inset-bottom, 0px));
             }
             .btn {
                 width: 40px;
@@ -188,6 +216,21 @@
                 width: 55px;
                 height: 40px;
                 font-size: 11px;
+            }
+        }
+        
+        @media (orientation: landscape) and (max-height: 500px) {
+            .controls {
+                padding: 5px 15px;
+                min-height: 45px;
+            }
+            .btn {
+                width: 40px;
+                height: 40px;
+            }
+            .fire-btn {
+                width: 55px;
+                height: 40px;
             }
         }
     </style>
@@ -209,9 +252,12 @@
         </div>
         
         <div class="controls">
-            <div class="movement-controls">
-                <button id="left" class="btn">←</button>
-                <button id="right" class="btn">→</button>
+            <div style="display: flex; flex-direction: column; align-items: center;">
+                <div class="controls-info">Touch or Keyboard: ← → SPACE</div>
+                <div class="movement-controls">
+                    <button id="left" class="btn">←</button>
+                    <button id="right" class="btn">→</button>
+                </div>
             </div>
             <button id="fire" class="btn fire-btn">FIRE</button>
         </div>
@@ -222,7 +268,16 @@
         let canvas, ctx, score = 0, gameRunning = true;
         let player, bullets = [], invaders = [], enemyBullets = [];
         let keys = {}, touch = { left: false, right: false };
-        let frameCount = 0;
+        
+        // Cross-browser timing variables
+        let invaderMoveCounter = 0;
+        let enemyShootCounter = 0;
+        
+        const INVADER_MOVE_INTERVAL = 40;
+        const ENEMY_SHOOT_INTERVAL = 90;
+        
+        // Touch state management
+        let leftBtn, rightBtn, fireBtn;
         
         function init() {
             canvas = document.getElementById('canvas');
@@ -235,9 +290,12 @@
             score = 0;
             bullets = [];
             enemyBullets = [];
-            frameCount = 0;
+            invaderMoveCounter = 0;
+            enemyShootCounter = 0;
             
-            // Create player
+            // Reset touch state
+            resetTouchState();
+            
             player = {
                 x: canvas.width / 2 - 20,
                 y: canvas.height - 40,
@@ -255,12 +313,22 @@
             gameLoop();
         }
         
+        function resetTouchState() {
+            // Force reset all touch states
+            touch.left = false;
+            touch.right = false;
+            
+            // Remove visual pressed states
+            if (leftBtn) leftBtn.classList.remove('pressed');
+            if (rightBtn) rightBtn.classList.remove('pressed');
+            if (fireBtn) fireBtn.classList.remove('pressed');
+        }
+        
         function resizeCanvas() {
             const container = canvas.parentElement;
             const containerWidth = container.clientWidth;
             const containerHeight = container.clientHeight;
             
-            // Make canvas fit the available space with some padding
             const width = Math.min(containerWidth - 10, 600);
             const height = Math.min(containerHeight - 10, 450);
             
@@ -269,7 +337,6 @@
             canvas.style.width = width + 'px';
             canvas.style.height = height + 'px';
             
-            // Adjust player position if canvas resized
             if (player) {
                 player.x = Math.min(player.x, width - player.width);
                 player.y = height - 40;
@@ -278,7 +345,6 @@
         
         function createInvaders() {
             invaders = [];
-            // Reduced to 3 rows and 6 columns for mobile
             const rows = 3;
             const cols = 6;
             const invaderWidth = 35;
@@ -301,7 +367,13 @@
         }
         
         function setupControls() {
-            // Keyboard
+            // Get button references
+            leftBtn = document.getElementById('left');
+            rightBtn = document.getElementById('right');
+            fireBtn = document.getElementById('fire');
+            const restartBtn = document.getElementById('restart');
+            
+            // Keyboard controls
             document.addEventListener('keydown', (e) => {
                 keys[e.code] = true;
                 if (e.code === 'Space') {
@@ -314,52 +386,94 @@
                 keys[e.code] = false;
             });
             
-            // Touch controls
-            const leftBtn = document.getElementById('left');
-            const rightBtn = document.getElementById('right');
-            const fireBtn = document.getElementById('fire');
-            const restartBtn = document.getElementById('restart');
+            // Global event listeners to catch lost touch events
+            document.addEventListener('touchend', resetTouchState);
+            document.addEventListener('touchcancel', resetTouchState);
+            window.addEventListener('blur', resetTouchState);
+            window.addEventListener('focus', resetTouchState);
+            document.addEventListener('visibilitychange', resetTouchState);
             
             // Prevent default behaviors
             [leftBtn, rightBtn, fireBtn].forEach(btn => {
                 btn.addEventListener('contextmenu', e => e.preventDefault());
                 btn.addEventListener('selectstart', e => e.preventDefault());
+                btn.addEventListener('dragstart', e => e.preventDefault());
             });
             
-            // Left button
+            // Left button with comprehensive event handling
             leftBtn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 touch.left = true;
+                leftBtn.classList.add('pressed');
             });
+            
             leftBtn.addEventListener('touchend', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 touch.left = false;
+                leftBtn.classList.remove('pressed');
             });
+            
+            leftBtn.addEventListener('touchcancel', (e) => {
+                e.preventDefault();
+                touch.left = false;
+                leftBtn.classList.remove('pressed');
+            });
+            
             leftBtn.addEventListener('mousedown', (e) => {
                 e.preventDefault();
                 touch.left = true;
+                leftBtn.classList.add('pressed');
             });
+            
             leftBtn.addEventListener('mouseup', (e) => {
                 e.preventDefault();
                 touch.left = false;
+                leftBtn.classList.remove('pressed');
             });
             
-            // Right button
+            leftBtn.addEventListener('mouseleave', (e) => {
+                touch.left = false;
+                leftBtn.classList.remove('pressed');
+            });
+            
+            // Right button with comprehensive event handling
             rightBtn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 touch.right = true;
+                rightBtn.classList.add('pressed');
             });
+            
             rightBtn.addEventListener('touchend', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 touch.right = false;
+                rightBtn.classList.remove('pressed');
             });
+            
+            rightBtn.addEventListener('touchcancel', (e) => {
+                e.preventDefault();
+                touch.right = false;
+                rightBtn.classList.remove('pressed');
+            });
+            
             rightBtn.addEventListener('mousedown', (e) => {
                 e.preventDefault();
                 touch.right = true;
+                rightBtn.classList.add('pressed');
             });
+            
             rightBtn.addEventListener('mouseup', (e) => {
                 e.preventDefault();
                 touch.right = false;
+                rightBtn.classList.remove('pressed');
+            });
+            
+            rightBtn.addEventListener('mouseleave', (e) => {
+                touch.right = false;
+                rightBtn.classList.remove('pressed');
             });
             
             // Fire button
@@ -367,9 +481,13 @@
                 e.preventDefault();
                 shoot();
             });
+            
             fireBtn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 shoot();
+                fireBtn.classList.add('pressed');
+                setTimeout(() => fireBtn.classList.remove('pressed'), 150);
             });
             
             restartBtn.addEventListener('click', restart);
@@ -387,20 +505,22 @@
         }
         
         function restart() {
+            resetTouchState(); // Reset touch state on restart
             init();
         }
         
         function update() {
             if (!gameRunning) return;
             
-            frameCount++;
+            invaderMoveCounter++;
+            enemyShootCounter++;
             
-            // Move player
+            // Move player - check bounds more strictly
             if ((keys['ArrowLeft'] || touch.left) && player.x > 0) {
-                player.x -= player.speed;
+                player.x = Math.max(0, player.x - player.speed);
             }
             if ((keys['ArrowRight'] || touch.right) && player.x < canvas.width - player.width) {
-                player.x += player.speed;
+                player.x = Math.min(canvas.width - player.width, player.x + player.speed);
             }
             
             // Update bullets
@@ -412,7 +532,6 @@
                     continue;
                 }
                 
-                // Check collision with invaders
                 for (let j = invaders.length - 1; j >= 0; j--) {
                     if (collision(bullets[i], invaders[j])) {
                         bullets.splice(i, 1);
@@ -439,13 +558,13 @@
                 }
             }
             
-            // Move invaders every 35 frames (slightly slower for mobile)
-            if (frameCount % 35 === 0) {
+            if (invaderMoveCounter >= INVADER_MOVE_INTERVAL) {
+                invaderMoveCounter = 0;
                 moveInvaders();
             }
             
-            // Enemy shooting every 80 frames (less frequent)
-            if (frameCount % 80 === 0 && invaders.length > 0 && Math.random() < 0.4) {
+            if (enemyShootCounter >= ENEMY_SHOOT_INTERVAL && invaders.length > 0 && Math.random() < 0.4) {
+                enemyShootCounter = 0;
                 const randomInvader = invaders[Math.floor(Math.random() * invaders.length)];
                 enemyBullets.push({
                     x: randomInvader.x + randomInvader.width / 2,
@@ -455,7 +574,6 @@
                 });
             }
             
-            // Create new wave
             if (invaders.length === 0) {
                 createInvaders();
             }
@@ -497,32 +615,26 @@
         }
         
         function draw() {
-            // Clear screen
             ctx.fillStyle = '#000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Draw player
             ctx.fillStyle = '#0f0';
             ctx.fillRect(player.x, player.y, player.width, player.height);
             
-            // Draw bullets
             ctx.fillStyle = '#ff0';
             for (let bullet of bullets) {
                 ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
             }
             
-            // Draw enemy bullets
             ctx.fillStyle = '#f00';
             for (let bullet of enemyBullets) {
                 ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
             }
             
-            // Draw invaders
             ctx.fillStyle = '#f00';
             for (let invader of invaders) {
                 ctx.fillRect(invader.x, invader.y, invader.width, invader.height);
                 
-                // Simple invader design
                 ctx.fillStyle = '#fff';
                 ctx.fillRect(invader.x + 6, invader.y + 6, 3, 3);
                 ctx.fillRect(invader.x + 26, invader.y + 6, 3, 3);
@@ -532,6 +644,7 @@
         
         function gameOver() {
             gameRunning = false;
+            resetTouchState(); // Reset touch state on game over
             document.getElementById('finalScore').textContent = score;
             document.getElementById('gameOver').style.display = 'block';
         }
