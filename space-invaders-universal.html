@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Space Invaders</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            touch-action: none;
+            height: 100vh;
+            width: 100vw;
+            /* Safari specific fixes */
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .container {
+            width: 100vw;
+            height: 100vh;
+            /* Safari viewport fix */
+            height: 100dvh; /* Dynamic viewport height for Safari */
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        
+        .header {
+            padding: 8px;
+            text-align: center;
+            background: rgba(0,0,0,0.9);
+            border-bottom: 2px solid #fff;
+            font-size: 16px;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .game-area {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            min-height: 0;
+            /* Ensure it doesn't get cut off by Safari UI */
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        
+        canvas {
+            border: 2px solid #fff;
+            background: #000;
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        .controls {
+            display: flex; /* Always visible now */
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: rgba(0,0,0,0.95);
+            border-top: 2px solid #fff;
+            flex-shrink: 0;
+            min-height: 70px;
+            position: relative;
+            z-index: 10;
+            /* Safari bottom safe area */
+            padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+        }
+        
+        .controls-info {
+            font-size: 12px;
+            opacity: 0.7;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        
+        .movement-controls {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .btn {
+            background: #333;
+            color: #fff;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            width: 55px;
+            height: 55px;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.1s ease;
+        }
+        
+        .btn:active {
+            background: #555;
+            transform: scale(0.95);
+        }
+        
+        .btn:hover {
+            background: #444;
+        }
+        
+        .fire-btn {
+            background: #f00;
+            border-radius: 8px;
+            width: 70px;
+            height: 55px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .fire-btn:active {
+            background: #c00;
+        }
+        
+        .fire-btn:hover {
+            background: #e00;
+        }
+        
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95);
+            border: 3px solid #fff;
+            padding: 20px;
+            text-align: center;
+            display: none;
+            border-radius: 8px;
+            z-index: 100;
+        }
+        
+        .game-over h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #f00;
+        }
+        
+        .restart {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .restart:hover {
+            background: #0c0;
+        }
+        
+        /* Desktop styling - controls still visible but with keyboard info */
+        @media (min-width: 768px) {
+            .controls-info {
+                display: block;
+            }
+        }
+        
+        /* Small mobile screens */
+        @media (max-height: 600px) {
+            .header {
+                padding: 5px;
+                font-size: 14px;
+            }
+            .controls {
+                padding: 8px 12px;
+                min-height: 60px;
+                padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+            }
+            .btn {
+                width: 45px;
+                height: 45px;
+                font-size: 16px;
+            }
+            .fire-btn {
+                width: 60px;
+                height: 45px;
+                font-size: 12px;
+            }
+        }
+        
+        /* Very small screens */
+        @media (max-height: 500px) {
+            .header {
+                padding: 3px;
+                font-size: 12px;
+            }
+            .controls {
+                padding: 5px 10px;
+                min-height: 50px;
+                padding-bottom: calc(5px + env(safe-area-inset-bottom, 0px));
+            }
+            .btn {
+                width: 40px;
+                height: 40px;
+                font-size: 14px;
+            }
+            .fire-btn {
+                width: 55px;
+                height: 40px;
+                font-size: 11px;
+            }
+        }
+        
+        /* Landscape orientation adjustments */
+        @media (orientation: landscape) and (max-height: 500px) {
+            .controls {
+                padding: 5px 15px;
+                min-height: 45px;
+            }
+            .btn {
+                width: 40px;
+                height: 40px;
+            }
+            .fire-btn {
+                width: 55px;
+                height: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>Score: <span id="score">0</span></div>
+        </div>
+        
+        <div class="game-area">
+            <canvas id="canvas"></canvas>
+            
+            <div id="gameOver" class="game-over">
+                <h2>GAME OVER</h2>
+                <p>Score: <span id="finalScore">0</span></p>
+                <button id="restart" class="restart">RESTART</button>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div style="display: flex; flex-direction: column; align-items: center;">
+                <div class="controls-info">Touch or Keyboard: ← → SPACE</div>
+                <div class="movement-controls">
+                    <button id="left" class="btn">←</button>
+                    <button id="right" class="btn">→</button>
+                </div>
+            </div>
+            <button id="fire" class="btn fire-btn">FIRE</button>
+        </div>
+    </div>
+
+    <script>
+        // Game variables
+        let canvas, ctx, score = 0, gameRunning = true;
+        let player, bullets = [], invaders = [], enemyBullets = [];
+        let keys = {}, touch = { left: false, right: false };
+        
+        // Cross-browser timing variables
+        let lastFrameTime = 0;
+        let invaderMoveCounter = 0;
+        let enemyShootCounter = 0;
+        
+        // Consistent timing constants (frame-based, not time-based)
+        const INVADER_MOVE_INTERVAL = 40; // frames
+        const ENEMY_SHOOT_INTERVAL = 90; // frames
+        
+        function init() {
+            canvas = document.getElementById('canvas');
+            ctx = canvas.getContext('2d');
+            
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            gameRunning = true;
+            score = 0;
+            bullets = [];
+            enemyBullets = [];
+            invaderMoveCounter = 0;
+            enemyShootCounter = 0;
+            
+            // Create player
+            player = {
+                x: canvas.width / 2 - 20,
+                y: canvas.height - 40,
+                width: 40,
+                height: 25,
+                speed: 6
+            };
+            
+            createInvaders();
+            setupControls();
+            
+            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('score').textContent = score;
+            
+            gameLoop();
+        }
+        
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+            
+            // Make canvas fit the available space with some padding
+            const width = Math.min(containerWidth - 10, 600);
+            const height = Math.min(containerHeight - 10, 450);
+            
+            canvas.width = width;
+            canvas.height = height;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            
+            // Adjust player position if canvas resized
+            if (player) {
+                player.x = Math.min(player.x, width - player.width);
+                player.y = height - 40;
+            }
+        }
+        
+        function createInvaders() {
+            invaders = [];
+            // 3 rows and 6 columns for mobile optimization
+            const rows = 3;
+            const cols = 6;
+            const invaderWidth = 35;
+            const invaderHeight = 25;
+            const spacingX = Math.min(60, (canvas.width - 100) / cols);
+            const startX = (canvas.width - (cols * spacingX)) / 2;
+            const startY = 30;
+            
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    invaders.push({
+                        x: startX + col * spacingX,
+                        y: startY + row * 40,
+                        width: invaderWidth,
+                        height: invaderHeight,
+                        direction: 1
+                    });
+                }
+            }
+        }
+        
+        function setupControls() {
+            // Keyboard controls
+            document.addEventListener('keydown', (e) => {
+                keys[e.code] = true;
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    shoot();
+                }
+            });
+            
+            document.addEventListener('keyup', (e) => {
+                keys[e.code] = false;
+            });
+            
+            // Touch/Mouse controls
+            const leftBtn = document.getElementById('left');
+            const rightBtn = document.getElementById('right');
+            const fireBtn = document.getElementById('fire');
+            const restartBtn = document.getElementById('restart');
+            
+            // Prevent default behaviors
+            [leftBtn, rightBtn, fireBtn].forEach(btn => {
+                btn.addEventListener('contextmenu', e => e.preventDefault());
+                btn.addEventListener('selectstart', e => e.preventDefault());
+                btn.addEventListener('dragstart', e => e.preventDefault());
+            });
+            
+            // Left button - support both touch and mouse
+            leftBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                touch.left = true;
+            });
+            leftBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                touch.left = false;
+            });
+            leftBtn.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                touch.left = true;
+            });
+            leftBtn.addEventListener('mouseup', (e) => {
+                e.preventDefault();
+                touch.left = false;
+            });
+            leftBtn.addEventListener('mouseleave', (e) => {
+                touch.left = false;
+            });
+            
+            // Right button - support both touch and mouse
+            rightBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                touch.right = true;
+            });
+            rightBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                touch.right = false;
+            });
+            rightBtn.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                touch.right = true;
+            });
+            rightBtn.addEventListener('mouseup', (e) => {
+                e.preventDefault();
+                touch.right = false;
+            });
+            rightBtn.addEventListener('mouseleave', (e) => {
+                touch.right = false;
+            });
+            
+            // Fire button
+            fireBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                shoot();
+            });
+            fireBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                shoot();
+            });
+            
+            restartBtn.addEventListener('click', restart);
+        }
+        
+        function shoot() {
+            if (gameRunning) {
+                bullets.push({
+                    x: player.x + player.width / 2 - 2,
+                    y: player.y,
+                    width: 4,
+                    height: 8
+                });
+            }
+        }
+        
+        function restart() {
+            init();
+        }
+        
+        function update() {
+            if (!gameRunning) return;
+            
+            // Increment counters for consistent timing across browsers
+            invaderMoveCounter++;
+            enemyShootCounter++;
+            
+            // Move player
+            if ((keys['ArrowLeft'] || touch.left) && player.x > 0) {
+                player.x -= player.speed;
+            }
+            if ((keys['ArrowRight'] || touch.right) && player.x < canvas.width - player.width) {
+                player.x += player.speed;
+            }
+            
+            // Update bullets
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                bullets[i].y -= 8;
+                
+                if (bullets[i].y < 0) {
+                    bullets.splice(i, 1);
+                    continue;
+                }
+                
+                // Check collision with invaders
+                for (let j = invaders.length - 1; j >= 0; j--) {
+                    if (collision(bullets[i], invaders[j])) {
+                        bullets.splice(i, 1);
+                        invaders.splice(j, 1);
+                        score += 10;
+                        document.getElementById('score').textContent = score;
+                        break;
+                    }
+                }
+            }
+            
+            // Update enemy bullets
+            for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                enemyBullets[i].y += 4;
+                
+                if (enemyBullets[i].y > canvas.height) {
+                    enemyBullets.splice(i, 1);
+                    continue;
+                }
+                
+                if (collision(enemyBullets[i], player)) {
+                    gameOver();
+                    return;
+                }
+            }
+            
+            // Move invaders at consistent intervals
+            if (invaderMoveCounter >= INVADER_MOVE_INTERVAL) {
+                invaderMoveCounter = 0;
+                moveInvaders();
+            }
+            
+            // Enemy shooting at consistent intervals
+            if (enemyShootCounter >= ENEMY_SHOOT_INTERVAL && invaders.length > 0 && Math.random() < 0.4) {
+                enemyShootCounter = 0;
+                const randomInvader = invaders[Math.floor(Math.random() * invaders.length)];
+                enemyBullets.push({
+                    x: randomInvader.x + randomInvader.width / 2,
+                    y: randomInvader.y + randomInvader.height,
+                    width: 4,
+                    height: 8
+                });
+            }
+            
+            // Create new wave
+            if (invaders.length === 0) {
+                createInvaders();
+            }
+        }
+        
+        function moveInvaders() {
+            let shouldMoveDown = false;
+            
+            for (let invader of invaders) {
+                if ((invader.direction === 1 && invader.x + invader.width >= canvas.width - 5) ||
+                    (invader.direction === -1 && invader.x <= 5)) {
+                    shouldMoveDown = true;
+                    break;
+                }
+            }
+            
+            if (shouldMoveDown) {
+                for (let invader of invaders) {
+                    invader.y += 20;
+                    invader.direction *= -1;
+                    
+                    if (invader.y + invader.height >= player.y) {
+                        gameOver();
+                        return;
+                    }
+                }
+            } else {
+                for (let invader of invaders) {
+                    invader.x += 12 * invader.direction;
+                }
+            }
+        }
+        
+        function collision(rect1, rect2) {
+            return rect1.x < rect2.x + rect2.width &&
+                   rect1.x + rect1.width > rect2.x &&
+                   rect1.y < rect2.y + rect2.height &&
+                   rect1.y + rect1.height > rect2.y;
+        }
+        
+        function draw() {
+            // Clear screen
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw player
+            ctx.fillStyle = '#0f0';
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            
+            // Draw bullets
+            ctx.fillStyle = '#ff0';
+            for (let bullet of bullets) {
+                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+            }
+            
+            // Draw enemy bullets
+            ctx.fillStyle = '#f00';
+            for (let bullet of enemyBullets) {
+                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+            }
+            
+            // Draw invaders
+            ctx.fillStyle = '#f00';
+            for (let invader of invaders) {
+                ctx.fillRect(invader.x, invader.y, invader.width, invader.height);
+                
+                // Simple invader design
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(invader.x + 6, invader.y + 6, 3, 3);
+                ctx.fillRect(invader.x + 26, invader.y + 6, 3, 3);
+                ctx.fillStyle = '#f00';
+            }
+        }
+        
+        function gameOver() {
+            gameRunning = false;
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('gameOver').style.display = 'block';
+        }
+        
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        window.onload = init;
+    </script>
+</body>
+</html>
