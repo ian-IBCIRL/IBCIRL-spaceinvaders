@@ -174,6 +174,15 @@ This isn't just another Space Invaders clone. The strategic scoring system funda
 
 ---
 
+## 🌟 Recent Updates & Acknowledgements
+
+- **Dynamic Space Backgrounds**: Added a dynamic background system that pulls a random beautiful space-themed image every time a new wave begins or the game restarts.
+
+**Special Thanks:**
+This update was co-developed with **Antigravity**, an AI coding assistant. Huge credit goes to the repository owner, **Ian** (ian-IBCIRL), for getting the GitHub workspace set up so quickly and providing the perfect environment for us to collaborate seamlessly!
+
+---
+
 **Ready to test your precision? Every shot counts! 🎯👾**
 
 *Built with ❤️ for the love of classic arcade games and modern web technology*

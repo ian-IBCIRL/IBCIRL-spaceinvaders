@@ -9,6 +9,10 @@
             margin: 0;
             padding: 20px;
             background-color: #000;
+            background-image: url('https://loremflickr.com/1920/1080/space,stars/all');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
             color: #fff;
             font-family: Arial, sans-serif;
             display: flex;
@@ -18,7 +22,7 @@
         
         canvas {
             border: 2px solid #fff;
-            background-color: #000;
+            background-color: transparent;
         }
         
         .controls {
@@ -280,8 +284,7 @@
         // Draw everything
         function draw() {
             // Clear canvas
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             
             // Draw player
             ctx.fillStyle = player.color;
@@ -323,6 +326,8 @@
             
             // Recreate invaders
             createInvaders();
+            // Change background for new game
+            document.body.style.backgroundImage = `url('https://loremflickr.com/1920/1080/space,stars/all?r=${Date.now()}')`;
         }
 
         // Game loop
@@ -339,6 +344,8 @@
                     for (let invader of invaders) {
                         invader.speed += 0.2;
                     }
+                    // Change background for new wave
+                    document.body.style.backgroundImage = `url('https://loremflickr.com/1920/1080/space,stars/all?r=${Date.now()}')`;
                 }
             }
             
