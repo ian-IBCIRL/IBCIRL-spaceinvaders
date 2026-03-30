@@ -2,6 +2,17 @@
 
 A classic Space Invaders game with a strategic twist, built with vanilla JavaScript and optimized for all devices - mobile, tablet, and desktop.
 
+---
+
+## 🌟 Recent Updates & Acknowledgements
+
+- **Dynamic Space Backgrounds**: Added a dynamic background system that pulls a random beautiful space-themed image every time a new wave begins or the game restarts.
+
+**Special Thanks:**
+This update was co-developed with **Antigravity**, an AI coding assistant. Huge credit goes to the repository owner, **Ian** (ian-IBCIRL), for getting the GitHub workspace set up so quickly and providing the perfect environment for us to collaborate seamlessly!
+
+---
+
 ## 🎮 Play Online
 
 [Play the game here](https://ian-IBCIRL.github.io/IBCIRL-spaceinvaders) 
@@ -171,15 +182,6 @@ This isn't just another Space Invaders clone. The strategic scoring system funda
 - **Competitive element** - Natural leaderboards through accuracy stats  
 - **Long-term engagement** - Players improve over time
 - **Universal accessibility** - Perfect experience on any device
-
----
-
-## 🌟 Recent Updates & Acknowledgements
-
-- **Dynamic Space Backgrounds**: Added a dynamic background system that pulls a random beautiful space-themed image every time a new wave begins or the game restarts.
-
-**Special Thanks:**
-This update was co-developed with **Antigravity**, an AI coding assistant. Huge credit goes to the repository owner, **Ian** (ian-IBCIRL), for getting the GitHub workspace set up so quickly and providing the perfect environment for us to collaborate seamlessly!
 
 ---
 
